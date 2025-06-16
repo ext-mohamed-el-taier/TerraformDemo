@@ -23,7 +23,7 @@ jobs:
         uses: actions/checkout@v4
 
       - uses: hashicorp/setup-terraform@v3
-      
+
       - name: Get changed files
         id: changed-files
         uses: tj-actions/changed-files@v44
@@ -56,7 +56,8 @@ jobs:
           #$PARAMS_ALL_CHANGED_FILES includes a list of bicepparam files (full path) that have changed, separated by space e.g config/sub-plq-lz-corp-001/spf/prd/default.bicepparam config/sub-plq-lz-corp-001/spf/tst/default.bicepparam
         run: |
           echo "One or more PARAM file(s) has changed."
-          echo "List all the files that have changed: $PARAMS_ALL_CHANGED_FILES"
+          echo "List all the files that have changed:"
+          echo "$PARAMS_ALL_CHANGED_FILES"
           echo -e "Running TF Formart"
           echo -e "--------------------------------------------------------"
           echo -e "--------------------------------------------------------"
