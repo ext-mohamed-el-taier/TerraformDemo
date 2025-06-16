@@ -47,10 +47,7 @@ jobs:
             params:
               - '**.tf'
 
-      - name: Run step if param file(s) change
-        id: run-if-param-changed
-       
-        if: steps.changed-files-yaml.outputs.params_any_changed == 'true'  
+      - name: Run Terraform fmt
         env:
           PARAMS_ALL_CHANGED_FILES: ${{ steps.changed-files-yaml.outputs.params_all_changed_files }}
           
