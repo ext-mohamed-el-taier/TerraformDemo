@@ -73,6 +73,12 @@ jobs:
       - name: Run TF Sec
         shell: bash
         run: |
+
+          MODULES=$(find modules -type d -mindepth 2 -maxdepth 2) | tr '\n' ' '`
+           for module in ${MODULES}; do
+                echo -e $module
+            done
+
           for dir in ${MODULES}; do
             if [ -f "$dir/main.tf" ]; then
               echo "Running tflint in $dir"
@@ -102,6 +108,8 @@ jobs:
             fi
             echo "--------------------------------------------------------"
           done
+
+          
               
       - name: Run Trivy vulnerability scanner in IaC mode
         uses: aquasecurity/trivy-action@0.28.0
@@ -112,6 +120,9 @@ jobs:
           output: 'trivy-results.sarif'
           exit-code: '1'
           severity: 'CRITICAL,HIGH'
+
+
+
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
