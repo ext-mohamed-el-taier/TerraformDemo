@@ -24,8 +24,6 @@ jobs:
 
       - uses: hashicorp/setup-terraform@v3
 
-      - name: Get List of Azure Modules
-        run: |
 
       - name: Install tfsec from Official Repo
         run: |
@@ -82,7 +80,7 @@ jobs:
           for dir in ${MODULES}; do
             if [ -f "$dir/main.tf" ]; then
               echo "Running tflint in $dir"
-              tfsec ./;"
+              tfsec $dir ;"
             else
               echo "Skipping $dir — no main.tf found"
             fi
@@ -109,7 +107,7 @@ jobs:
             echo "--------------------------------------------------------"
           done
 
-          
+
               
       - name: Run Trivy vulnerability scanner in IaC mode
         uses: aquasecurity/trivy-action@0.28.0
