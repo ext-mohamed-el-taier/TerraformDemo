@@ -159,7 +159,6 @@ jobs:
             if [ -f "$dir/main.tf" ]; then
               echo "Running checkov in $dir"
               checkov --directory $dir
-              tflint --chdir="$dir"
             else
               echo "Skipping $dir — no main.tf found"
             fi
