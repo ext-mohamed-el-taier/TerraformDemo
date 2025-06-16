@@ -7,7 +7,7 @@ permissions:
 on:
   pull_request:
     paths:
-        - 'modules/azure/**.tf'
+        - 'modules/azure/**/**.tf'
     types: [opened, reopened,synchronize, edited]
 
 env:
@@ -44,7 +44,7 @@ jobs:
         with:
           files_yaml: |
             params:
-              - '**.bicepparam'
+              - '**.tf'
 
       - name: Run step if param file(s) change
         id: run-if-param-changed
