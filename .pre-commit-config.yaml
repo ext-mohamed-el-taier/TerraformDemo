@@ -1,0 +1,53 @@
+---
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      # Git style
+      - id: check-merge-conflict
+      # - id: no-commit-to-branch
+      #   exclude: 'main'
+      # Common errors
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+        exclude: .gitlab-ci.yml
+        # exclude: |
+        #           (?x)^(
+        #               README.md|
+        #               .gitlab-ci.yml
+        #           )$
+      - id: check-yaml
+      # BUG: Currently detects README.md as executable
+      # - id: check-executables-have-shebangs
+      - id: check-json
+      # Cross platform
+      - id: check-case-conflict
+
+
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.91.0
+    hooks:
+      # - id: terraform_docs
+      #   args:
+      #     - --hook-config=--path-to-file=docs/README.md # Valid UNIX path. I.e. ../TFDOC.md or docs/README.md etc.
+      #     - --hook-config=--add-to-existing-file=true # Boolean. true or false
+      #     - --hook-config=--create-file-if-not-exist=true
+      # - id: terraform_tfsec
+      # - id: terraform_trivy
+      #   files: ^aws/
+      #   # args:
+      #   #   - --args=--ignorefile=.trivyignore
+      #   #   - --args=--skip-dirs="**/.terraform"
+      - id: terraform_checkov
+        args:
+          - --args=--skip-check CKV2_GHA_1
+          - --args=--skip-check CKV_TF_2
+      - id: terraform_fmt
+        args:
+          - --args=-no-color
+          - --args=-diff
+          - --args=-write=false
