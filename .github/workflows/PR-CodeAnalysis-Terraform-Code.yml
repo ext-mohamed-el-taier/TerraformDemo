@@ -1,0 +1,119 @@
+name: Terraform Code Analysis
+run-name: Terraform Code Auto-Validation Triggered by @${{ github.actor }}
+permissions:
+    id-token: write
+    contents: read
+    
+on:
+  pull_request:
+    paths:
+        - 'modules/azure/**/**.tf'
+    types: [opened, reopened,synchronize, edited]
+
+env:
+  location: australiaeast
+
+jobs:
+  
+  runPreMergeChecks:
+    name: IaC Static Code Analysis
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+
+      - name: Get List of Azure Modules
+        run: |
+
+      - name: Install tfsec from Official Repo
+        run: |
+          curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
+
+      - name: Install tflint from Official Repo
+        run: |
+          curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+
+      - name: Install required packages on GitHub runner via apt
+        run: |
+          set -e
+
+          echo "Updating APT and installing required packages..."
+
+          sudo apt update && sudo apt upgrade -y
+
+          sudo apt install --no-install-recommends -y \
+            apt-transport-https \
+            apt-utils \
+            build-essential \
+            curl \
+            wget \
+            git \
+            gnupg \
+            gpg \
+            python3-crcmod \
+            python3-dev \
+            python3-pip \
+            python3-virtualenv \
+            shellcheck \
+            unzip \
+            zip \
+
+          sudo apt autoremove --purge -y
+
+          echo "Environment is ready!"
+
+      - name: Install Checkov & YAML Lint
+        run: |
+          pip3 install --upgrade pip && pip3 install --upgrade setuptools
+          pip3 install checkov
+          pip3 install yamllint
+
+      - name: Run TF Sec
+        shell: bash
+        run: |
+          for dir in ${MODULES}; do
+            if [ -f "$dir/main.tf" ]; then
+              echo "Running tflint in $dir"
+              tfsec ./;"
+            else
+              echo "Skipping $dir — no main.tf found"
+            fi
+            echo "--------------------------------------------------------"
+          done
+
+          
+
+      - name: Run TF Lint
+        shell: bash
+        run: |
+          MODULES=$(find modules -type d -mindepth 2 -maxdepth 2) | tr '\n' ' '`
+           for module in ${MODULES}; do
+                echo -e $module
+            done
+
+          for dir in ${MODULES}; do
+            if [ -f "$dir/main.tf" ]; then
+              echo "Running tflint in $dir"
+              tflint --chdir="$dir"
+            else
+              echo "Skipping $dir — no main.tf found"
+            fi
+            echo "--------------------------------------------------------"
+          done
+              
+      - name: Run Trivy vulnerability scanner in IaC mode
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: 'config'
+          hide-progress: true
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'

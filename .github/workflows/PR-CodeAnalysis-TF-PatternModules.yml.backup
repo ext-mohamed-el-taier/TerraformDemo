@@ -1,5 +1,5 @@
 name: Terraform Code Analysis
-run-name: Bicep Param Auto-Validation Triggered by @${{ github.actor }}
+run-name: Terraform Code Auto-Validation Triggered by @${{ github.actor }}
 permissions:
     id-token: write
     contents: read
@@ -22,7 +22,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      
+      - uses: hashicorp/setup-terraform@v3
+
       - name: Get changed files
         id: changed-files
         uses: tj-actions/changed-files@v44
@@ -48,14 +49,15 @@ jobs:
 
       - name: Run step if param file(s) change
         id: run-if-param-changed
-        # NOTE: Ensure all outputs are prefixed by the same key used above e.g. `params(...)` | `doc_(...)` when trying to access the `any_changed` output.
+       
         if: steps.changed-files-yaml.outputs.params_any_changed == 'true'  
         env:
           PARAMS_ALL_CHANGED_FILES: ${{ steps.changed-files-yaml.outputs.params_all_changed_files }}
-          #$PARAMS_ALL_CHANGED_FILES includes a list of bicepparam files (full path) that have changed, separated by space e.g config/sub-plq-lz-corp-001/spf/prd/default.bicepparam config/sub-plq-lz-corp-001/spf/tst/default.bicepparam
+          
         run: |
           echo "One or more PARAM file(s) has changed."
-          echo "List all the files that have changed: $PARAMS_ALL_CHANGED_FILES"
+          echo "List all the files that have changed:"
+          echo "$PARAMS_ALL_CHANGED_FILES"
           echo -e "Running TF Formart"
           echo -e "--------------------------------------------------------"
           echo -e "--------------------------------------------------------"
