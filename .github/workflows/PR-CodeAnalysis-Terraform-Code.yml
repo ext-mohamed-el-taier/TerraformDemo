@@ -24,6 +24,47 @@ jobs:
 
       - uses: hashicorp/setup-terraform@v3
 
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v44
+        # To compare changes between the current commit and the last pushed remote commit set `since_last_remote_commit: true`. e.g
+        #with:
+            #since_last_remote_commit: true 
+
+      - name: List all changed files
+        env:
+          ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
+        run: |
+          for file in ${ALL_CHANGED_FILES}; do
+            echo "$file was changed"
+          done
+
+      - name: Get all doc and params files that have changed
+        id: changed-files-yaml
+        uses: tj-actions/changed-files@v44
+        with:
+          files_yaml: |
+            params:
+              - '**.tf'
+
+      - name: Run step if param file(s) change
+        id: run-if-param-changed
+       
+        if: steps.changed-files-yaml.outputs.params_any_changed == 'true'  
+        env:
+          PARAMS_ALL_CHANGED_FILES: ${{ steps.changed-files-yaml.outputs.params_all_changed_files }}
+          
+        run: |
+          echo "One or more PARAM file(s) has changed."
+          echo "List all the files that have changed:"
+          echo "$PARAMS_ALL_CHANGED_FILES"
+          echo -e "Running TF Formart"
+          echo -e "--------------------------------------------------------"
+          echo -e "--------------------------------------------------------"
+          for file in ${PARAMS_ALL_CHANGED_FILES}; do
+            terraform fmt -write=false $file  # Run terraform fmt on the specific file
+            echo -e "----------------------$((i))---------------------------------"
+          done
 
       - name: Install tfsec from Official Repo
         run: |
@@ -79,7 +120,7 @@ jobs:
           for dir in ${MODULES}; do
             if [ -f "$dir/main.tf" ]; then
               echo "Running tflint in $dir"
-              tfsec $dir ;"
+              tfsec $dir
             else
               echo "Skipping $dir — no main.tf found"
             fi
@@ -98,7 +139,7 @@ jobs:
 
           for dir in ${MODULES}; do
             if [ -f "$dir/main.tf" ]; then
-              echo "Running tflint in $dir"
+              echo "Running tfsec in $dir"
               tflint --chdir="$dir"
             else
               echo "Skipping $dir — no main.tf found"
