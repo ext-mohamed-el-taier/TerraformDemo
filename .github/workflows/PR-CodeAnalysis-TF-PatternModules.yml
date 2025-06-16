@@ -7,7 +7,7 @@ permissions:
 on:
   pull_request:
     paths:
-        - 'modules/azure/**.tf'
+        - 'modules/azure/**/**.tf'
     types: [opened, reopened,synchronize, edited]
 
 env:
