@@ -16,6 +16,8 @@ GitHub Actions are used to automatically run checks on any modules modified in a
 
 - Security scanning (tfsec, checkov)
 
+![image](/images/autochecks.png)
+
 ### Terraform Fmt
 terraform fmt is used to enforce consistent code formatting across all modules. It automatically checks that Terraform files are properly structured and readable, helping teams maintain a clean and professional codebase.
 
@@ -32,7 +34,7 @@ Checkov is a static analysis tool that inspects Terraform for compliance with po
 The .gitignore file is configured to exclude sensitive files such as state files, backend configs, and local credentials. This helps prevent accidental commits of data that should never leave a developer’s machine or CI environment.
 
 ## Templated GitHub Workflows for Terraform Resource Deployment
-A sample reusable, templated GitHub workflow is provided to enforce consistent deployment processes. These include:
+A sample reusable, templated GitHub workflow is provided to enforce consistent deployment processes see `(.github/workflows/Deploy-Terraform-Project.yml)`. These include:
 
 -  Standardized checks and validations
 
@@ -47,9 +49,21 @@ CI/CD and quality controls work best when enforced early in the development cycl
 ### Pre-Commit Checks
 Integrating pre-commit hooks ensures code is automatically formatted, validated, and scanned before it's even committed. This includes tools like terraform fmt, tflint, tfsec, and checkov, enabling a "shift-left" approach to testing and quality control.
 
-Additionally, pre-commit hooks can be configured to automate the creation and updates to Terraform documentation. This can include automatically generating module descriptions, input/output variable docs, and other necessary documentation directly from the code comments or structure. By ensuring that documentation is part of the commit cycle, you help keep your Terraform resources self-documented and up-to-date without the need for manual intervention.
+Additionally, pre-commit hooks can be configured to *automate the creation and updates to Terraform documentation.* This can include automatically generating module descriptions, input/output variable docs, and other necessary documentation directly from the code comments or structure. By ensuring that documentation is part of the commit cycle, you help keep your Terraform resources self-documented and up-to-date without the need for manual intervention.
 
 By using Pre-Commit and Dev Containers, this process becomes part of the development workflow, ensuring consistent, automated documentation alongside code validation.
 
 ### GitHub Runner Custom Image
 In production environments, it's recommended to use a custom GitHub Actions runner image to avoid the overhead of installing CI/CD tools (like Terraform, TFLint, tfsec, etc.) with every workflow run.
+
+### Terragrunt for Reduced Code Repetition
+
+In production, it's highly recommended to use Terragrunt to simplify the management of Terraform configurations, especially when working with multiple modules and environments.
+
+Terragrunt helps reduce code repetition by:
+
+- Automatically generating common Terraform files, such as variables.tf, backend.tf, and provider configurations, making it easier to manage consistent configurations across all modules. Terragrunt allows you to summarise an entire deployment in a single file using 'include' and 'input' statements
+
+- Centralizing and reusing common configurations, such as state backend settings, in a terragrunt.hcl file to avoid the need for duplication in every module.
+
+Ensuring consistent naming patterns for tfstate files and cloud resources, helping maintain structure and reduce errors across multiple environments or workspaces.

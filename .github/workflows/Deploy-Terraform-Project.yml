@@ -12,7 +12,7 @@ on:
       Subscription:
         description: 'Subscription Folder'
         required: true
-        default: 'sub-plq-lz-corp-001'
+        default: 'sub-name-001'
         type: choice
         options:
           - 'sub-name-001'
@@ -27,7 +27,7 @@ on:
           - 'appName'
 
       Environment:
-        description: 'Github Environment used for deployment, also needs to match repo folder name where bicepparam file is kept.'
+        description: 'Github Environment used for deployment, also needs to match repo folder name wherethe terraform files are kept'
         required: true
         default: 'sbx'
         type: choice
@@ -41,7 +41,7 @@ on:
         type: choice
         options:
           - 'Plan and Apply'
-          - 'Plan'
+          - 'Plan only'
 
 
 
@@ -117,19 +117,77 @@ jobs:
       - name: Run TF Lint
         shell: bash
         run: |
-          MODULES=$(find modules -type d -mindepth 2 -maxdepth 2 | tr '\n' ' ')
-           for module in ${MODULES}; do
-                echo -e $module
-            done
-
-          for dir in ${MODULES}; do
-            if [ -f "$dir/main.tf" ]; then
-              echo "Running tfsec in $dir"
-              tflint --chdir="$dir"
-            else
-              echo "Skipping $dir — no main.tf found"
-            fi
-            echo "--------------------------------------------------------"
-          done
           echo "Running TF Sec"
           tfsec --chdir= src/${{ inputs.Subscription }}/${{ inputs.Context }}/${{ inputs.Environment }}
+
+      - name: Run TF Checkov
+        shell: bash
+        run: |
+          echo "Running TF Sec"
+          checkov --directory src/${{ inputs.Subscription }}/${{ inputs.Context }}/${{ inputs.Environment }}
+
+  validate:
+    runs-on: ubuntu-24.04
+    needs: runCodeChecks
+    if: ${{ inputs.Options == 'Plan and Apply' || inputs.Options == 'Plan only' }}
+    steps:
+      # Checkout Repo
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3 
+
+      # Login using OIDC Creds
+      - name: OIDC Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.CLIENT_ID }}
+          tenant-id: ${{ secrets.TENANT_ID }}
+          subscription-id: ${{ secrets.DEFAULT_SUBSCRIPTION_ID }} 
+          enable-AzPSSession: true
+
+      # Terraform Plan 
+      - name: Run Terraform plan for src/${{ inputs.Subscription }}/${{ inputs.Context }}/${{ inputs.Environment }}
+        run: |
+            echo "Running Terraform plan..."
+            az account set --subscription ${{ inputs.Subscription }}
+            terraform plan -chdir=src/${{ inputs.Subscription }}/${{ inputs.Context }}/${{ inputs.Environment }}
+
+  apply:
+    runs-on: ubuntu-24.04
+    needs: runCodeChecks
+    environment: ${{inputs.Environment}}
+    if: ${{ inputs.Options == 'Plan and Apply'}}
+    steps:
+      # Checkout Repo
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3 
+
+      # Login using OIDC Creds
+      - name: OIDC Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.CLIENT_ID }}
+          tenant-id: ${{ secrets.TENANT_ID }}
+          subscription-id: ${{ secrets.DEFAULT_SUBSCRIPTION_ID }} 
+          enable-AzPSSession: true
+
+      # Terraform Apply
+      - name: Run Terraform Apply for src/${{ inputs.Subscription }}/${{ inputs.Context }}/${{ inputs.Environment }}
+        run: |
+            echo "Running Terraform plan..."
+            az account set --subscription ${{ inputs.Subscription }}
+            terraform apply -chdir=src/${{ inputs.Subscription }}/${{ inputs.Context }}/${{ inputs.Environment }}    
+      
