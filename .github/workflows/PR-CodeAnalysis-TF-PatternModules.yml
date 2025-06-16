@@ -1,5 +1,5 @@
 name: Terraform Code Analysis
-run-name: Bicep Param Auto-Validation Triggered by @${{ github.actor }}
+run-name: Terraform Code Auto-Validation Triggered by @${{ github.actor }}
 permissions:
     id-token: write
     contents: read
@@ -24,51 +24,56 @@ jobs:
 
       - uses: hashicorp/setup-terraform@v3
 
-      - name: Get changed files
-        id: changed-files
-        uses: tj-actions/changed-files@v44
-        # To compare changes between the current commit and the last pushed remote commit set `since_last_remote_commit: true`. e.g
-        #with:
-            #since_last_remote_commit: true 
-
-      - name: List all changed files
-        env:
-          ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
-        run: |
-          for file in ${ALL_CHANGED_FILES}; do
-            echo "$file was changed"
-          done
-
-      - name: Get all doc and params files that have changed
-        id: changed-files-yaml
-        uses: tj-actions/changed-files@v44
-        with:
-          files_yaml: |
-            params:
-              - '**.tf'
-
-      - name: Run step if param file(s) change
-        id: run-if-param-changed
-        # NOTE: Ensure all outputs are prefixed by the same key used above e.g. `params(...)` | `doc_(...)` when trying to access the `any_changed` output.
-        if: steps.changed-files-yaml.outputs.params_any_changed == 'true'  
-        env:
-          PARAMS_ALL_CHANGED_FILES: ${{ steps.changed-files-yaml.outputs.params_all_changed_files }}
-          #$PARAMS_ALL_CHANGED_FILES includes a list of bicepparam files (full path) that have changed, separated by space e.g config/sub-plq-lz-corp-001/spf/prd/default.bicepparam config/sub-plq-lz-corp-001/spf/tst/default.bicepparam
-        run: |
-          echo "One or more PARAM file(s) has changed."
-          echo "List all the files that have changed:"
-          echo "$PARAMS_ALL_CHANGED_FILES"
-          echo -e "Running TF Formart"
-          echo -e "--------------------------------------------------------"
-          echo -e "--------------------------------------------------------"
-          for file in ${PARAMS_ALL_CHANGED_FILES}; do
-            terraform fmt -write=false -check $file  # Run terraform fmt on the specific file
-            echo -e "----------------------$((i))---------------------------------"
-          done 
-
       - name: Install tfsec
         run: |
           curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
+
+      - name: Install tflint
+        run: |
+          curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+
+      - name: Install required packages on GitHub runner
+        run: |
+          set -e
+
+          echo "Updating APT and installing required packages..."
+
+          sudo apt update && sudo apt upgrade -y
+
+          sudo apt install --no-install-recommends -y \
+            apt-transport-https \
+            apt-utils \
+            build-essential \
+            ca-certificates \
+            curl \
+            wget \
+            git \
+            gnupg \
+            gpg \
+            jq \
+            make \
+            python3-crcmod \
+            python3-dev \
+            python3-pip \
+            python3-virtualenv \
+            shellcheck \
+            unzip \
+            zip \
+
+          sudo apt autoremove --purge -y
+
+          echo "Environment is ready!"
+
+      - name: Run TF Sec
+        shell: bash
+        run: |
+          echo "Check if CSRs were exported and set CSRExportedFlag if CSRs were exported to decide whether to run signCerts job.."
+
+      - name: Run TF Lint
+        shell: bash
+        run: |
+          echo "Check if CSRs were exported and set CSRExportedFlag if CSRs were exported to decide whether to run signCerts job.."
+
               
       - name: Run Trivy vulnerability scanner in IaC mode
         uses: aquasecurity/trivy-action@0.28.0
