@@ -1,0 +1,135 @@
+run-name: ${{ inputs.Subscription }}-${{ inputs.Context }}-${{ inputs.Environment }}
+name: Terraform Deployment Pipeline Template Sample
+permissions:
+      id-token: write
+      contents: read
+      
+on:
+  workflow_dispatch:
+    inputs:
+
+
+      Subscription:
+        description: 'Subscription Folder'
+        required: true
+        default: 'sub-plq-lz-corp-001'
+        type: choice
+        options:
+          - 'sub-name-001'
+
+
+      Context:
+        description: 'Application Folder'
+        required: true
+        default: 'appName'
+        type: choice
+        options:
+          - 'appName'
+
+      Environment:
+        description: 'Github Environment used for deployment, also needs to match repo folder name where bicepparam file is kept.'
+        required: true
+        default: 'sbx'
+        type: choice
+        options:
+          - 'sbx'          
+      
+      Options:
+        description: 'Pipeline Options'
+        required: true
+        default: 'Plan and Apply'
+        type: choice
+        options:
+          - 'Plan and Apply'
+          - 'Plan'
+
+
+
+
+env:
+  location: 'australiaeast'
+  runNumber: ${{ github.run_number }}
+
+jobs:
+  runCodeChecks:
+    name: IaC Static Code Linting and Analysis
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3 
+
+      - name: Run Terraform Fmt 
+        run: |
+             echo "Running terraform format"
+             terraform fmt -check -write=false $file  src/${{ inputs.Subscription }}/${{ inputs.Context }}/${{ inputs.Environment }} # Run terraform fmt on the specific directory
+
+      - name: Install tfsec from Official Repo
+        run: |
+          curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
+
+      - name: Install tflint from Official Repo
+        run: |
+          curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+
+      - name: Install required packages on GitHub runner via apt
+        run: |
+
+          echo "Updating APT and installing required packages..."
+
+          sudo apt update && sudo apt upgrade -y
+
+          sudo apt install --no-install-recommends -y \
+            apt-transport-https \
+            apt-utils \
+            build-essential \
+            curl \
+            wget \
+            git \
+            gnupg \
+            gpg \
+            python3-crcmod \
+            python3-dev \
+            python3-pip \
+            python3-virtualenv \
+            shellcheck \
+            unzip \
+            zip \
+
+          sudo apt autoremove --purge -y
+
+          echo "Environment is ready!"
+
+      - name: Install Checkov & YAML Lint
+        run: |
+          pip3 install --upgrade pip && pip3 install --upgrade setuptools
+          pip3 install checkov
+          pip3 install yamllint
+
+      - name: Run TF Sec
+        shell: bash
+        run: |
+              echo "Running TF Sec"
+              tfsec src/${{ inputs.Subscription }}/${{ inputs.Context }}/${{ inputs.Environment }}
+
+
+      - name: Run TF Lint
+        shell: bash
+        run: |
+          MODULES=$(find modules -type d -mindepth 2 -maxdepth 2 | tr '\n' ' ')
+           for module in ${MODULES}; do
+                echo -e $module
+            done
+
+          for dir in ${MODULES}; do
+            if [ -f "$dir/main.tf" ]; then
+              echo "Running tfsec in $dir"
+              tflint --chdir="$dir"
+            else
+              echo "Skipping $dir — no main.tf found"
+            fi
+            echo "--------------------------------------------------------"
+          done
+          echo "Running TF Sec"
+          tfsec --chdir= src/${{ inputs.Subscription }}/${{ inputs.Context }}/${{ inputs.Environment }}
