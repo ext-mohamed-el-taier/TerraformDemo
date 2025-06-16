@@ -44,7 +44,7 @@ jobs:
         with:
           files_yaml: |
             params:
-              - '**.bicepparam'
+              - '**.tf'
 
       - name: Run step if param file(s) change
         id: run-if-param-changed
