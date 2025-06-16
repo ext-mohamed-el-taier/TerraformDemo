@@ -35,7 +35,6 @@ jobs:
 
       - name: Install required packages on GitHub runner via apt
         run: |
-          set -e
 
           echo "Updating APT and installing required packages..."
 
@@ -72,7 +71,7 @@ jobs:
         shell: bash
         run: |
 
-          MODULES=$(find modules -type d -mindepth 2 -maxdepth 2) | tr '\n' ' '`
+          MODULES=$(find modules -type d -mindepth 2 -maxdepth 2 | tr '\n' ' ')
            for module in ${MODULES}; do
                 echo -e $module
             done
@@ -92,7 +91,7 @@ jobs:
       - name: Run TF Lint
         shell: bash
         run: |
-          MODULES=$(find modules -type d -mindepth 2 -maxdepth 2) | tr '\n' ' '`
+          MODULES=$(find modules -type d -mindepth 2 -maxdepth 2 | tr '\n' ' ')
            for module in ${MODULES}; do
                 echo -e $module
             done
