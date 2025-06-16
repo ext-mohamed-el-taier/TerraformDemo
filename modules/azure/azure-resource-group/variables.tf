@@ -1,6 +1,6 @@
 variable "location" {
   type        = string
-  default     = "Australia East"
+  default     = "australiaeast"
   description = "(Required) Specifies the supported Azure location where the resource exists. Changing this forces a new resource to be created."
 }
 
