@@ -16,7 +16,7 @@ env:
 jobs:
   
   runPreMergeChecks:
-    name: IaC Static Code Analysis
+    name: IaC Static Code Linting and Analysis
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout code
@@ -139,7 +139,7 @@ jobs:
 
           for dir in ${MODULES}; do
             if [ -f "$dir/main.tf" ]; then
-              echo "Running tfsec in $dir"
+              echo "Running lint in $dir"
               tflint --chdir="$dir"
             else
               echo "Skipping $dir — no main.tf found"
@@ -147,6 +147,24 @@ jobs:
             echo "--------------------------------------------------------"
           done
 
+      - name: Run TF Checkov
+        shell: bash
+        run: |
+          MODULES=$(find modules -type d -mindepth 2 -maxdepth 2 | tr '\n' ' ')
+           for module in ${MODULES}; do
+                echo -e $module
+            done
+
+          for dir in ${MODULES}; do
+            if [ -f "$dir/main.tf" ]; then
+              echo "Running checkov in $dir"
+              checkov --directory $dir
+              tflint --chdir="$dir"
+            else
+              echo "Skipping $dir — no main.tf found"
+            fi
+            echo "--------------------------------------------------------"
+          done
 
               
       - name: Run Trivy vulnerability scanner in IaC mode
@@ -158,7 +176,6 @@ jobs:
           output: 'trivy-results.sarif'
           exit-code: '1'
           severity: 'CRITICAL,HIGH'
-
 
 
 
