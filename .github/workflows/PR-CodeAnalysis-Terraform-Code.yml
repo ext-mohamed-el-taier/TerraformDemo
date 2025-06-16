@@ -80,8 +80,7 @@ jobs:
           for dir in ${MODULES}; do
             if [ -f "$dir/main.tf" ]; then
               echo "Running tflint in $dir"
-              cd $dir
-              tfsec ./;"
+              tfsec $dir ;"
             else
               echo "Skipping $dir — no main.tf found"
             fi
